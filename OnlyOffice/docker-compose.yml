@@ -1,0 +1,44 @@
+services:
+    onlyoffice-document-server:
+        container_name: onlyoffice-document-server
+        image: onlyoffice/documentserver:latest
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./onlyoffice_data:/var/www/onlyoffice/Data
+            - ./onlyoffice_logs:/var/log/onlyoffice
+            - ./onlyoffice_lib:/var/lib/onlyoffice
+        depends_on:
+            - onlyoffice-postgresql
+        networks:
+            - onlyoffice-net
+        environment:
+            - POSTGRESQL_SERVER_HOST=onlyoffice-postgresql
+            - POSTGRESQL_SERVER_PORT=5432
+            - POSTGRESQL_SERVER_DB_NAME=onlyoffice
+            - POSTGRESQL_SERVER_USER=onlyoffice
+            - POSTGRESQL_SERVER_PASS=onlyoffice
+
+    onlyoffice-postgresql:
+        container_name: onlyoffice-postgresql
+        image: postgres:13
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: onlyoffice
+            POSTGRES_PASSWORD: onlyoffice
+            POSTGRES_DB: onlyoffice
+        volumes:
+            - ./onlyoffice_db:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U onlyoffice -d onlyoffice"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        networks:
+            - onlyoffice-net
+    
+networks:
+    onlyoffice-net:
+        driver: bridge
